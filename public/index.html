@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Kalkulator Target Tabungan (FaaS Demo)</title>
+  <title>Kalkulator Target Tabungan (Cloudflare Workers FaaS)</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-[#fffdf9] text-slate-800 min-h-screen flex items-center justify-center p-4 font-sans">
@@ -19,7 +19,6 @@
       </p>
     </div>
 
-    <!-- Form Input -->
     <form id="formTabungan" class="space-y-4">
       <div>
         <label class="block text-sm font-medium text-slate-700 mb-1">Target Tabungan (Rp)</label>
@@ -45,7 +44,6 @@
       </button>
     </form>
 
-    <!-- Area Hasil dari Cloudflare Worker -->
     <div id="boxHasil" class="hidden mt-6 p-4 rounded-xl bg-pink-50/60 border border-pink-100 text-sm space-y-2">
       <p class="font-semibold text-[#b96782]" id="teksKeterangan"></p>
       <div class="text-xs text-slate-600 space-y-1 pt-2 border-t border-pink-100">
@@ -56,9 +54,6 @@
   </div>
 
   <script>
-    // NANTI GANTI URL INI DENGAN URL CLOUDFLARE WORKER KAMU
-    const WORKER_URL = "https://api-target-tabungan.username-kamu.workers.dev";
-
     const form = document.getElementById("formTabungan");
     const btnHitung = document.getElementById("btnHitung");
     const boxHasil = document.getElementById("boxHasil");
@@ -73,8 +68,7 @@
       const setoran = document.getElementById("setoran").value;
 
       try {
-        // Mengirim HTTP GET Request ke Cloudflare Worker
-        const response = await fetch(`${WORKER_URL}/?target=${target}&awal=${awal}&setoran=${setoran}`);
+        const response = await fetch(`/api/hitung?target=${target}&awal=${awal}&setoran=${setoran}`);
         const data = await response.json();
 
         if (data.status === "sukses") {
@@ -86,7 +80,7 @@
           alert(data.pesan);
         }
       } catch (err) {
-        alert("Gagal terhubung ke Cloudflare Worker. Pastikan URL Worker sudah benar dan sudah di-deploy.");
+        alert("Terjadi kesalahan saat memanggil fungsi Worker.");
       } finally {
         btnHitung.textContent = "Hitung Estimasi via Worker";
         btnHitung.disabled = false;
