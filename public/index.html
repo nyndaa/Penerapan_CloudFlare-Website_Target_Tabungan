@@ -57,33 +57,73 @@
     const form = document.getElementById("formTabungan");
     const btnHitung = document.getElementById("btnHitung");
     const boxHasil = document.getElementById("boxHasil");
+    const inputTarget = document.getElementById("target");
+    const inputAwal = document.getElementById("awal");
+    const inputSetoran = document.getElementById("setoran");
 
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      btnHitung.textContent = "Memanggil FaaS...";
+    let jedaKetik;
+
+    async function jalankanPerhitungan() {
+      const target = inputTarget.value;
+      const awal = inputAwal.value || 0;
+      const setoran = inputSetoran.value;
+
+      // Jangan panggil Worker jika target atau setoran masih kosong / <= 0
+      if (!target || !setoran || Number(target) <= 0 || Number(setoran) <= 0) {
+        boxHasil.classList.add("hidden");
+        return;
+      }
+
+      // 1. Update otomatis link di address bar browser tanpa reload halaman
+      const urlBaru = `?target=${encodeURIComponent(target)}&awal=${encodeURIComponent(awal)}&setoran=${encodeURIComponent(setoran)}`;
+      window.history.replaceState(null, "", urlBaru);
+
+      btnHitung.textContent = "Menghitung otomatis...";
       btnHitung.disabled = true;
 
-      const target = document.getElementById("target").value;
-      const awal = document.getElementById("awal").value || 0;
-      const setoran = document.getElementById("setoran").value;
-
       try {
-        const response = await fetch(`/api/hitung?target=${target}&awal=${awal}&setoran=${setoran}`);
+        // 2. Panggil API Cloudflare Worker secara otomatis
+        const response = await fetch(`/api/hitung${urlBaru}`);
         const data = await response.json();
 
         if (data.status === "sukses") {
           document.getElementById("teksKeterangan").textContent = data.hasil_perhitungan.keterangan;
-          document.getElementById("teksSisa").textContent = "Rp " + data.hasil_perhitungan.sisa_dana_dibutuhkan.toLocaleString("id-ID");
+          document.getElementById("teksSisa").textContent =
+            "Rp " + data.hasil_perhitungan.sisa_dana_dibutuhkan.toLocaleString("id-ID");
           document.getElementById("teksEdge").textContent = data.lokasi_eksekusi_edge;
           boxHasil.classList.remove("hidden");
-        } else {
-          alert(data.pesan);
         }
       } catch (err) {
-        alert("Terjadi kesalahan saat memanggil fungsi Worker.");
+        console.error("Gagal memanggil Worker:", err);
       } finally {
         btnHitung.textContent = "Hitung Estimasi via Worker";
         btnHitung.disabled = false;
+      }
+    }
+
+    // Jalankan otomatis setiap kali user mengubah angka (dengan jeda 500ms agar hemat request)
+    [inputTarget, inputAwal, inputSetoran].forEach((input) => {
+      input.addEventListener("input", () => {
+        clearTimeout(jedaKetik);
+        jedaKetik = setTimeout(jalankanPerhitungan, 500);
+      });
+    });
+
+    // Tetap dukung jika tombol diklik secara manual
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      clearTimeout(jedaKetik);
+      jalankanPerhitungan();
+    });
+
+    // Jika link dibuka dengan parameter di URL, langsung isi form dan hitung otomatis
+    window.addEventListener("DOMContentLoaded", () => {
+      const params = new URLSearchParams(window.location.search);
+      if (params.has("target") && params.has("setoran")) {
+        inputTarget.value = params.get("target");
+        inputAwal.value = params.get("awal") || 0;
+        inputSetoran.value = params.get("setoran");
+        jalankanPerhitungan();
       }
     });
   </script>
