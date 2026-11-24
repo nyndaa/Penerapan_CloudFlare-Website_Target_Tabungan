@@ -61,31 +61,4 @@
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
       btnHitung.textContent = "Memanggil FaaS...";
-      btnHitung.disabled = true;
-
-      const target = document.getElementById("target").value;
-      const awal = document.getElementById("awal").value || 0;
-      const setoran = document.getElementById("setoran").value;
-
-      try {
-        const response = await fetch(`/api/hitung?target=${target}&awal=${awal}&setoran=${setoran}`);
-        const data = await response.json();
-
-        if (data.status === "sukses") {
-          document.getElementById("teksKeterangan").textContent = data.hasil_perhitungan.keterangan;
-          document.getElementById("teksSisa").textContent = "Rp " + data.hasil_perhitungan.sisa_dana_dibutuhkan.toLocaleString("id-ID");
-          document.getElementById("teksEdge").textContent = data.lokasi_eksekusi_edge;
-          boxHasil.classList.remove("hidden");
-        } else {
-          alert(data.pesan);
-        }
-      } catch (err) {
-        alert("Terjadi kesalahan saat memanggil fungsi Worker.");
-      } finally {
-        btnHitung.textContent = "Hitung Estimasi via Worker";
-        btnHitung.disabled = false;
-      }
-    });
-  </script>
-</body>
-</html>
+      btnHitung
